@@ -4,9 +4,11 @@ const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const connectDB = require("./config/db");
+
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const adminRoutes = require("./routes/admin.routes");
+const resourceRoutes = require("./routes/resource.routes");
 
 const app = express();
 
@@ -27,6 +29,9 @@ app.use("/api/users", userRoutes);
 
 // Admin routes
 app.use("/api/admin", adminRoutes);
+
+// Resource routes
+app.use("/api/resources", resourceRoutes);
 
 // Test route
 app.get("/", (req, res) => {
