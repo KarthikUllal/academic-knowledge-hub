@@ -9,6 +9,9 @@ const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const adminRoutes = require("./routes/admin.routes");
 const resourceRoutes = require("./routes/resource.routes");
+const postRoutes = require("./routes/post.routes")
+const commentRoutes = require("./routes/comment.routes");
+const reportRoutes = require("./routes/report.routes");
 
 const app = express();
 
@@ -32,6 +35,17 @@ app.use("/api/admin", adminRoutes);
 
 // Resource routes
 app.use("/api/resources", resourceRoutes);
+
+// Post routes
+app.use("/api/posts", postRoutes);
+
+// Comment routes
+app.use("/api", commentRoutes);
+
+// Report routes
+app.use("/api/reports", reportRoutes);
+
+
 
 // Test route
 app.get("/", (req, res) => {
