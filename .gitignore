@@ -27,3 +27,15 @@ coverage/
 # Operating system files
 .DS_Store
 Thumbs.db
+
+
+
+# Temporary test files
+test-*.js
+
+create-sample-docx.js
+create-sample-pptx.js
+
+sample.docx
+
+sample.pptx
