@@ -12,6 +12,7 @@ const resourceRoutes = require("./routes/resource.routes");
 const postRoutes = require("./routes/post.routes")
 const commentRoutes = require("./routes/comment.routes");
 const reportRoutes = require("./routes/report.routes");
+const aiRoutes = require("./routes/ai.routes");
 
 const app = express();
 
@@ -45,6 +46,8 @@ app.use("/api", commentRoutes);
 // Report routes
 app.use("/api/reports", reportRoutes);
 
+// AI routes
+app.use("/api/ai", aiRoutes);
 
 
 // Test route

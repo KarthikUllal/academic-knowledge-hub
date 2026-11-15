@@ -78,6 +78,16 @@ const userSchema = new mongoose.Schema(
             enum: ["student", "admin"],
             default: "student"
         },
+        passwordResetToken: {
+    type: String,
+    default: null,
+  },
+
+  passwordResetExpires: {
+    type: Date,
+    default: null,
+  },
+
 
         isActive: {
             type: Boolean,
