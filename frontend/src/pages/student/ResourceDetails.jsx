@@ -12,6 +12,7 @@ import {
     Building2,
     User,
     RefreshCw,
+    Image,
 } from "lucide-react";
 
 import {
@@ -25,6 +26,7 @@ import Button from "../../components/common/Button";
 import Badge from "../../components/common/Badge";
 import Loader from "../../components/common/Loader";
 import EmptyState from "../../components/common/EmptyState";
+import getFileName from "../../utils/getFileName";
 
 const ResourceDetails = () => {
     const { id } = useParams();
@@ -35,6 +37,7 @@ const ResourceDetails = () => {
     const [error, setError] = useState("");
 
     const [previewUrl, setPreviewUrl] = useState("");
+    const [previewType, setPreviewType] = useState("");
     const [previewLoading, setPreviewLoading] = useState(false);
 
     const [downloading, setDownloading] = useState(false);
@@ -68,25 +71,41 @@ const ResourceDetails = () => {
         fetchResource();
     }, [id, retryCount]);
 
-    // Check whether the resource is a PDF
-    const isPdf =
-        resource?.fileType?.toLowerCase().includes("pdf") ||
-        resource?.fileUrl?.toLowerCase().includes(".pdf");
+    // Supported preview formats
+    const supportedPreviewTypes = [
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+    ];
 
-    // Load document preview
+    // Check whether the resource supports preview
+    const canPreview = supportedPreviewTypes.includes(
+        resource?.fileType
+    );
+
+    // Check whether the resource is an image
+    const isImage = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+    ].includes(resource?.fileType);
+
+    // Load resource preview
     const handlePreview = async () => {
         try {
             setPreviewLoading(true);
 
             const response = await previewResource(id);
 
-            const fileUrl = response.data.preview.fileUrl;
+            const preview = response.data.preview;
 
-            if (!fileUrl) {
+            if (!preview.fileUrl) {
                 throw new Error("Preview URL not found");
             }
 
-            setPreviewUrl(fileUrl);
+            setPreviewUrl(preview.fileUrl);
+            setPreviewType(preview.fileType);
 
             // Scroll to the document preview section
             setTimeout(() => {
@@ -101,7 +120,7 @@ const ResourceDetails = () => {
 
             alert(
                 error.response?.data?.message ||
-                "Unable to load document preview."
+                "Unable to load resource preview."
             );
         } finally {
             setPreviewLoading(false);
@@ -109,6 +128,7 @@ const ResourceDetails = () => {
     };
 
     // Download resource
+
     const handleDownload = async () => {
         try {
             setDownloading(true);
@@ -129,12 +149,11 @@ const ResourceDetails = () => {
                 downloads: downloadData.downloads,
             }));
 
-            // Open the actual Cloudinary file
+            // Create a temporary download link
             const link = document.createElement("a");
 
             link.href = fileUrl;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
+            link.download = getFileName(resource.title, resource.fileType);
 
             document.body.appendChild(link);
             link.click();
@@ -151,6 +170,7 @@ const ResourceDetails = () => {
             setDownloading(false);
         }
     };
+
 
     // Loading state
     if (loading) {
@@ -253,10 +273,11 @@ const ResourceDetails = () => {
 
                     {/* Action buttons */}
                     <div className="flex flex-wrap gap-3">
+
                         <Button
                             variant="outline"
                             onClick={handlePreview}
-                            disabled={previewLoading || !isPdf}
+                            disabled={previewLoading || !canPreview}
                         >
                             <Eye size={17} />
                             {previewLoading
@@ -273,8 +294,8 @@ const ResourceDetails = () => {
                                 ? "Downloading..."
                                 : "Download"}
                         </Button>
-                    </div>
 
+                    </div>
                 </div>
 
                 {/* Resource metadata */}
@@ -389,8 +410,9 @@ const ResourceDetails = () => {
                 </div>
             </Card>
 
-            {/* Document preview */}
+            {/* Resource preview */}
             <div id="document-preview" className="scroll-mt-6">
+
                 <Card padding="none" className="overflow-hidden">
 
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4 sm:px-6">
@@ -400,22 +422,38 @@ const ResourceDetails = () => {
                             </h2>
 
                             <p className="mt-1 text-xs text-text-secondary">
-                                Preview the document before downloading.
+                                View the resource before downloading.
                             </p>
                         </div>
 
                         <Badge variant="info">
-                            {isPdf ? "PDF Document" : "Document"}
+                            {resource.fileType}
                         </Badge>
                     </div>
 
-                    {previewUrl && isPdf ? (
-                        <iframe
-                            src={previewUrl}
-                            title={resource.title}
-                            className="h-[500px] w-full bg-background sm:h-[650px]"
-                        />
-                    ) : (
+                    {/* PDF preview */}
+                    {previewUrl &&
+                        previewType === "application/pdf" && (
+                            <iframe
+                                src={previewUrl}
+                                title={resource.title}
+                                className="h-[500px] w-full bg-background sm:h-[650px]"
+                            />
+                        )}
+
+                    {/* Image preview */}
+                    {previewUrl && isImage && (
+                        <div className="flex justify-center bg-background p-4 sm:p-6">
+                            <img
+                                src={previewUrl}
+                                alt={resource.title}
+                                className="max-h-[650px] w-full object-contain"
+                            />
+                        </div>
+                    )}
+
+                    {/* Unsupported format */}
+                    {!canPreview && (
                         <div className="flex min-h-80 flex-col items-center justify-center bg-background p-6 text-center">
 
                             <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary-soft text-primary">
@@ -423,34 +461,65 @@ const ResourceDetails = () => {
                             </div>
 
                             <h3 className="mt-4 font-semibold text-text-primary">
-                                {isPdf
-                                    ? "Click Preview to view this document"
-                                    : "Preview not available"}
+                                Preview not available
                             </h3>
 
                             <p className="mt-2 max-w-sm text-sm text-text-secondary">
-                                {isPdf
-                                    ? "Load the PDF document to view it here."
-                                    : "Preview is currently available for PDF documents. You can download this file to view it."}
+                                This file format cannot be previewed here.
+                                Please download the resource to view it.
                             </p>
 
-                            {!isPdf && (
-                                <Button
-                                    className="mt-4"
-                                    onClick={handleDownload}
-                                    disabled={downloading}
-                                >
-                                    <Download size={17} />
-                                    {downloading
-                                        ? "Downloading..."
-                                        : "Download Document"}
-                                </Button>
-                            )}
+                            <Button
+                                className="mt-4"
+                                onClick={handleDownload}
+                                disabled={downloading}
+                            >
+                                <Download size={17} />
+                                {downloading
+                                    ? "Downloading..."
+                                    : "Download Resource"}
+                            </Button>
+
+                        </div>
+                    )}
+
+                    {/* Supported format, but preview not loaded */}
+                    {canPreview && !previewUrl && (
+                        <div className="flex min-h-80 flex-col items-center justify-center bg-background p-6 text-center">
+
+                            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                                {isImage ? (
+                                    <Image size={34} />
+                                ) : (
+                                    <FileText size={34} />
+                                )}
+                            </div>
+
+                            <h3 className="mt-4 font-semibold text-text-primary">
+                                Click Preview to view this resource
+                            </h3>
+
+                            <p className="mt-2 max-w-sm text-sm text-text-secondary">
+                                Load the document to view it here.
+                            </p>
+
+                            <Button
+                                variant="outline"
+                                className="mt-4"
+                                onClick={handlePreview}
+                                disabled={previewLoading}
+                            >
+                                <Eye size={17} />
+                                {previewLoading
+                                    ? "Loading Preview..."
+                                    : "Preview"}
+                            </Button>
 
                         </div>
                     )}
 
                 </Card>
+
             </div>
 
         </div>
