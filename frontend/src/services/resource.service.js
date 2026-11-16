@@ -18,7 +18,9 @@ export const previewResource = (id) => {
 
 // Download a resource
 export const downloadResource = (id) => {
-  return api.get(`/resources/${id}/download`);
+    return api.get(`/resources/${id}/download`, {
+        responseType: "blob"
+    });
 };
 
 // Upload a resource
@@ -27,10 +29,9 @@ export const uploadResource = (formData) => {
 };
 
 // Update a resource
-export const updateResource = (id, data) => {
-  return api.put(`/resources/${id}`, data);
+export const updateResource = (id, formData) => {
+    return api.put(`/resources/${id}`, formData);
 };
-
 // Delete a resource
 export const deleteResource = (id) => {
   return api.delete(`/resources/${id}`);

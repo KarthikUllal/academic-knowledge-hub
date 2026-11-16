@@ -10,6 +10,9 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import Dashboard from "../pages/student/Dashboard";
 import ExploreResources from "../pages/student/ExploreResources";
 import ResourceDetails from "../pages/student/ResourceDetails";
+import UploadResource from "../pages/student/UploadResource";
+import MyUploads from "../pages/student/MyUploads";
+import EditResource from "../pages/student/EditResource";
 const Placeholder = ({ title }) => <h1>{title}</h1>;
 
 const AppRoutes = () => (
@@ -29,10 +32,15 @@ const AppRoutes = () => (
             <Route path="/student" element={<StudentLayout />}>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="resources" element={<ExploreResources />} />
-                <Route path="upload" element={<Placeholder title="Upload Resource" />} />
+                <Route path="upload" element={<UploadResource />} />
                 <Route path="ai" element={<Placeholder title="AI Assistant" />} />
                 <Route path="profile" element={<Placeholder title="My Profile" />} />
                 <Route path="resources/:id" element={<ResourceDetails />} />
+                <Route path="my-uploads" element={<MyUploads />} />
+                <Route
+                    path="resources/:id/edit"
+                    element={<EditResource />}
+                />
             </Route>
         </Route>
 

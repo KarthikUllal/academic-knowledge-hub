@@ -9,6 +9,7 @@ const {
     deleteResourceService
 } = require("../services/resource.service");
 
+const axios = require("axios")
 // Upload a new academic resource
 const createResource = async (req, res) => {
     try {
@@ -127,8 +128,10 @@ const getResourcePreview = async (req, res) => {
 
 
 // Download an approved resource
+
 const downloadResource = async (req, res) => {
     try {
+        // Fetch the resource and increment download count
         const resource = await downloadResourceService(req.params.id);
 
         if (!resource) {
@@ -137,31 +140,94 @@ const downloadResource = async (req, res) => {
             });
         }
 
-        res.status(200).json({
-            message: "Resource download URL fetched successfully",
-            download: {
-                fileUrl: resource.fileUrl,
-                fileType: resource.fileType,
-                downloads: resource.downloads
-            }
+        // Fetch the actual file from Cloudinary
+        const fileResponse = await axios.get(resource.fileUrl, {
+            responseType: "stream"
         });
+
+        // Map MIME types to file extensions
+        const extensions = {
+            "application/pdf": "pdf",
+            "application/msword": "doc",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+            "application/vnd.ms-powerpoint": "ppt",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+            "application/vnd.ms-excel": "xls",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+            "text/plain": "txt",
+            "text/csv": "csv",
+            "image/jpeg": "jpg",
+            "image/png": "png",
+            "image/webp": "webp"
+        };
+
+        const extension = extensions[resource.fileType] || "file";
+
+        // Generate a safe filename
+        const safeTitle = (resource.title || "resource").replace(
+            /[<>:"/\\|?*\x00-\x1F]/g,
+            "_"
+        );
+
+        const fileName = `${safeTitle}.${extension}`;
+
+        // Provide a safe fallback filename
+        const fallbackName = fileName
+            .replace(/[^\x20-\x7E]/g, "_")
+            .replace(/["\\]/g, "_");
+
+        // Set download response headers
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${fallbackName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`
+        );
+
+        res.setHeader(
+            "Content-Type",
+            resource.fileType || "application/octet-stream"
+        );
+
+        res.setHeader("Cache-Control", "no-store");
+
+        // Set file size if available
+        if (fileResponse.headers["content-length"]) {
+            res.setHeader(
+                "Content-Length",
+                fileResponse.headers["content-length"]
+            );
+        }
+
+        // Stream the file to the browser
+        fileResponse.data.on("error", (error) => {
+            console.error("File stream error:", error);
+            res.destroy(error);
+        });
+
+        fileResponse.data.pipe(res);
 
     } catch (error) {
         console.error("Resource download error:", error);
 
+        if (res.headersSent) {
+            return res.destroy(error);
+        }
+
         res.status(500).json({
-            message: "Failed to fetch resource download URL"
+            message: "Failed to download resource"
         });
     }
 };
 
+
 //update resource uploaded by logged-in student
+
 const updateResource = async (req, res) => {
     try {
         const resource = await updateResourceService(
             req.params.id,
             req.user.userId,
-            req.body
+            req.body,
+            req.file
         );
 
         res.status(200).json({
@@ -179,6 +245,7 @@ const updateResource = async (req, res) => {
         });
     }
 };
+
 
 
 //delete resource uploaded by logged-in student
@@ -204,11 +271,6 @@ const deleteResource = async (req, res) => {
         });
     }
 };
-
-
-
-
-
 
 
 module.exports = {

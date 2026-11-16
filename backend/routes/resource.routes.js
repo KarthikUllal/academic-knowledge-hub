@@ -1,13 +1,13 @@
 const express = require("express");
 
 const {
-  createResource,
-  getApprovedResources,
-  getResourceById,
-  getResourcePreview,
-  downloadResource,
-  updateResource,
-  deleteResource,
+    createResource,
+    getApprovedResources,
+    getResourceById,
+    getResourcePreview,
+    downloadResource,
+    updateResource,
+    deleteResource,
 } = require("../controllers/resource.controller");
 const protect = require("../middleware/auth.middleware");
 const upload = require("../middleware/upload.middleware");
@@ -30,7 +30,12 @@ router.get("/:id/preview", protect, getResourcePreview);
 router.get("/:id/download", protect, downloadResource);
 
 // Update a resource
-router.put("/:id", protect, updateResource);
+router.put(
+    "/:id",
+    protect,
+    upload.single("file"),
+    updateResource
+);
 
 // Delete a resource
 router.delete("/:id", protect, deleteResource);

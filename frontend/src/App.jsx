@@ -1,5 +1,5 @@
 import AppRoutes from "./routes/AppRoutes"
-
+import { Toaster } from "sonner";
 function App() {
   return (
     // <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -7,8 +7,11 @@ function App() {
     //     Academic Knowledge Hub
     //   </h1>
     // </div>
+    <>
+      <Toaster position="top-right" richColors />
+      <AppRoutes />
+    </>
 
-    <AppRoutes />
 
 
   )

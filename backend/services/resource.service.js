@@ -167,7 +167,8 @@ const downloadResourceService = async (id) => {
 
 //update resource
 
-const updateResourceService = async (id, userId, data) => {
+
+const updateResourceService = async (id, userId, data, file) => {
 
     // Find the resource uploaded by the logged-in student
     const resource = await Resource.findOne({
@@ -178,6 +179,13 @@ const updateResourceService = async (id, userId, data) => {
     if (!resource) {
         const error = new Error("Resource not found or access denied");
         error.statusCode = 404;
+        throw error;
+    }
+
+    // Allow editing only rejected resources
+    if (resource.status !== "rejected") {
+        const error = new Error("Only rejected resources can be edited");
+        error.statusCode = 400;
         throw error;
     }
 
@@ -192,19 +200,76 @@ const updateResourceService = async (id, userId, data) => {
         "category"
     ];
 
-    // Update only the allowed fields
+    // Update the allowed text fields
     allowedFields.forEach((field) => {
         if (data[field] !== undefined) {
             resource[field] = data[field];
         }
     });
 
-    // Send the updated resource for admin approval
-    resource.status = "pending";
-    resource.rejectionReason = "";
+    let uploadedFile = null;
 
-    // Save updated resource in MongoDB
-    await resource.save();
+    // Upload a replacement file if the student selected one
+    if (file) {
+        uploadedFile = await uploadFile(file);
+
+        // Keep the existing file details in case saving fails
+        const oldFile = {
+            fileUrl: resource.fileUrl,
+            filePublicId: resource.filePublicId,
+            fileResourceType: resource.fileResourceType,
+            fileType: resource.fileType
+        };
+
+        // Update the resource with the new file details
+        resource.fileUrl = uploadedFile.secure_url;
+        resource.filePublicId = uploadedFile.public_id;
+        resource.fileResourceType = uploadedFile.resource_type;
+        resource.fileType = file.mimetype;
+
+        try {
+            // Send the updated resource for admin approval
+            resource.status = "pending";
+            resource.rejectionReason = "";
+
+            await resource.save();
+
+        } catch (error) {
+            // If saving fails, remove the newly uploaded file
+            try {
+                await deleteFile(
+                    uploadedFile.public_id,
+                    uploadedFile.resource_type
+                );
+            } catch (cleanupError) {
+                console.error("New file cleanup error:", cleanupError);
+            }
+
+            throw error;
+        }
+
+        // Delete the old file only after the new resource is saved
+        try {
+            const result = await deleteFile(
+                oldFile.filePublicId,
+                oldFile.fileResourceType
+            );
+
+            if (result.result !== "ok" && result.result !== "not found") {
+                console.error("Old Cloudinary file could not be deleted:", result);
+            }
+
+        } catch (error) {
+            console.error("Old Cloudinary file deletion error:", error);
+        }
+
+    } else {
+        // No replacement file: keep the existing file
+        resource.status = "pending";
+        resource.rejectionReason = "";
+
+        await resource.save();
+    }
 
     return resource;
 };

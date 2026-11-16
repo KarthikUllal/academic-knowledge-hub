@@ -82,6 +82,11 @@ const StudentNavbar = () => {
       danger: true,
       onClick: handleLogout,
     },
+    {
+      label: "My Uploads",
+      icon: <Upload size={17} />,
+      onClick: () => navigate("/student/my-uploads"),
+    },
   ];
 
   // Get student initials

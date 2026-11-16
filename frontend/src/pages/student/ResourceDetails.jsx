@@ -27,6 +27,7 @@ import Badge from "../../components/common/Badge";
 import Loader from "../../components/common/Loader";
 import EmptyState from "../../components/common/EmptyState";
 import getFileName from "../../utils/getFileName";
+import getFileTypeLabel from "../../utils/getFileTypeLabel";
 
 const ResourceDetails = () => {
     const { id } = useParams();
@@ -133,39 +134,40 @@ const ResourceDetails = () => {
         try {
             setDownloading(true);
 
-            // Get the download URL from the backend
             const response = await downloadResource(id);
 
-            const downloadData = response.data.download;
-            const fileUrl = downloadData?.fileUrl;
+            // Create a temporary URL for the downloaded file
+            const fileUrl = window.URL.createObjectURL(response.data);
 
-            if (!fileUrl) {
-                throw new Error("Download URL not found");
-            }
+            const fileName = getFileName(
+                resource.title,
+                resource.fileType
+            );
 
-            // Update the download count
-            setResource((previous) => ({
-                ...previous,
-                downloads: downloadData.downloads,
-            }));
-
-            // Create a temporary download link
+            // Trigger the browser download
             const link = document.createElement("a");
-
             link.href = fileUrl;
-            link.download = getFileName(resource.title, resource.fileType);
+            link.download = fileName;
 
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
 
+            // Update download count
+            setResource((previous) => ({
+                ...previous,
+                downloads: previous.downloads + 1
+            }));
+
+            // Release temporary URL
+            window.setTimeout(() => {
+                window.URL.revokeObjectURL(fileUrl);
+            }, 1000);
+
         } catch (error) {
             console.error("Download error:", error);
 
-            alert(
-                error.response?.data?.message ||
-                "Unable to download the resource. Please try again."
-            );
+            alert("Unable to download the resource. Please try again.");
         } finally {
             setDownloading(false);
         }
@@ -427,7 +429,7 @@ const ResourceDetails = () => {
                         </div>
 
                         <Badge variant="info">
-                            {resource.fileType}
+                            {getFileTypeLabel(resource.fileType)}
                         </Badge>
                     </div>
 
