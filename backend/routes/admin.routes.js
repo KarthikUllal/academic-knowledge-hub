@@ -14,6 +14,8 @@ const {
     updateStudentStatus,
     deleteStudent,
     getDashboardStats,
+    getAdminResourcePreview,
+    downloadAdminResource,
 } = require("../controllers/admin.controller");
 const { getAllReports, getReportById, reviewReport } = require("../controllers/report.controller");
 
@@ -100,6 +102,20 @@ router.delete(
     protect,
     authorize("admin"),
     deleteResourceByAdmin,
+);
+
+router.get(
+    "/resources/:id/preview",
+    protect,
+    authorize("admin"),
+    getAdminResourcePreview
+);
+
+router.get(
+    "/resources/:id/download",
+    protect,
+    authorize("admin"),
+    downloadAdminResource
 );
 
 module.exports = router;

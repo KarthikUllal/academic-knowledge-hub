@@ -9,8 +9,12 @@ const {
     getUserByIdService,
     updateStudentStatusService,
     deleteStudentService,
-    getDashboardStatsService
+    getDashboardStatsService,
+    getAdminResourcePreviewService,
+    getAdminResourceForDownloadService
 } = require("../services/admin.service");
+
+const axios = require("axios");
 
 // Get all pending resources
 const getPendingResources = async (req, res) => {
@@ -242,6 +246,93 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+// Preview document before approval
+
+const getAdminResourcePreview = async (req, res) => {
+    try {
+        const preview = await getAdminResourcePreviewService(
+            req.params.id
+        );
+
+        return res.status(200).json({
+            message: "Resource preview fetched successfully",
+            preview
+        });
+    } catch (error) {
+        return res.status(404).json({
+            message: error.message || "Unable to fetch resource preview"
+        });
+    }
+};
+
+
+const downloadAdminResource = async (req, res, next) => {
+    try {
+        const resource = await getAdminResourceForDownloadService(req.params.id);
+
+        const fileResponse = await axios.get(resource.fileUrl, {
+            responseType: "stream"
+        });
+
+        const mimeTypes = {
+            "application/pdf": "pdf",
+            "application/msword": "doc",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+            "application/vnd.ms-powerpoint": "ppt",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+            "application/vnd.ms-excel": "xls",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+            "text/plain": "txt",
+            "text/csv": "csv",
+            "image/jpeg": "jpg",
+            "image/png": "png",
+            "image/webp": "webp"
+        };
+
+        const fileType = resource.fileType || "";
+
+        // Determine the file extension
+        const extension =
+            mimeTypes[fileType] ||
+            fileType.split("/").pop() ||
+            "";
+
+        // Use the resource title as the filename
+        let filename = (resource.title || "resource")
+            .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+            .trim();
+
+        if (extension && !filename.toLowerCase().endsWith(`.${extension.toLowerCase()}`)) {
+            filename += `.${extension}`;
+        }
+
+        const contentType = fileType.includes("/")
+            ? fileType
+            : "application/octet-stream";
+
+        res.setHeader("Content-Type", contentType);
+
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename="${filename.replace(/["\\]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(filename)}`
+        );
+
+        fileResponse.data.on("error", (error) => {
+            if (!res.headersSent) {
+                next(error);
+            } else {
+                res.destroy(error);
+            }
+        });
+
+        fileResponse.data.pipe(res);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 module.exports = {
     getPendingResources,
     approveResource,
@@ -252,5 +343,7 @@ module.exports = {
     getUserById,
     updateStudentStatus,
     deleteStudent,
-    getDashboardStats
+    getDashboardStats,
+    getAdminResourcePreview,
+    downloadAdminResource
 };

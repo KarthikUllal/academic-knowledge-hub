@@ -267,6 +267,32 @@ const getDashboardStatsService = async () => {
 };
 
 
+//preview document before approval
+const getAdminResourcePreviewService = async (resourceId) => {
+    const resource = await Resource.findById(resourceId);
+
+    if (!resource) {
+        throw new Error("Resource not found");
+    }
+
+    return {
+        fileUrl: resource.fileUrl,
+        fileType: resource.fileType,
+        title: resource.title
+    };
+};
+
+
+const getAdminResourceForDownloadService = async (resourceId) => {
+    const resource = await Resource.findById(resourceId);
+
+    if (!resource) {
+        throw new Error("Resource not found");
+    }
+
+    return resource;
+};
+
 
 module.exports = {
     approveResourceService,
@@ -278,5 +304,7 @@ module.exports = {
     getUserByIdService,
     updateStudentStatusService,
     deleteStudentService,
-    getDashboardStatsService
+    getDashboardStatsService,
+    getAdminResourcePreviewService,
+    getAdminResourceForDownloadService
 };
