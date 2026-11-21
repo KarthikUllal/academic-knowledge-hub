@@ -19,6 +19,8 @@ import MyUploads from "../pages/student/MyUploads";
 import EditResource from "../pages/student/EditResource";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import ManageResources from "../pages/admin/ManageResources";
+import ManageUsers from "../pages/admin/ManageUsers";
+import MyProfile from "../pages/student/MyProfile";
 
 const Placeholder = ({ title }) => <h1>{title}</h1>;
 
@@ -50,7 +52,7 @@ const AppRoutes = () => (
 
                 <Route path="ai" element={<Placeholder title="AI Assistant" />} />
 
-                <Route path="profile" element={<Placeholder title="My Profile" />} />
+                <Route path="profile" element={<MyProfile />} />
             </Route>
         </Route>
 
@@ -67,7 +69,7 @@ const AppRoutes = () => (
                     element={<ManageResources/>}
                 />
 
-                <Route path="users" element={<Placeholder title="Manage Users" />} />
+                <Route path="users" element={<ManageUsers />} />
             </Route>
         </Route>
 

@@ -43,3 +43,28 @@ export const downloadAdminResource = (id) => {
         responseType: "blob"
     });
 };
+
+
+// Manage User // 
+
+// Get all students
+export const getAllUsers = () => {
+    return api.get("/admin/users");
+};
+
+// Get student details
+export const getUserById = (id) => {
+    return api.get(`/admin/users/${id}`);
+};
+
+// Update student account status
+export const updateStudentStatus = (id, isActive) => {
+    return api.patch(`/admin/users/${id}/status`, {
+        isActive
+    });
+};
+
+// Delete student account
+export const deleteStudent = (id) => {
+    return api.delete(`/admin/users/${id}`);
+};

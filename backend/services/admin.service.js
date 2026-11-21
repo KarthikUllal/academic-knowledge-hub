@@ -2,6 +2,8 @@
 const Resource = require("../models/resource.model");
 const User = require("../models/user.model");
 const { deleteFile } = require("./cloudinary.service");
+const { processApprovedResource } = require("../ai/document-processing/document-processing.service");
+const { deleteResourceChunks } = require("../ai/vector-store/chroma.service");
 
 // Get all pending resources
 const getPendingResourcesService = async () => {
@@ -16,8 +18,8 @@ const getPendingResourcesService = async () => {
 };
 
 
-//approve resources
 
+// Approve resources and start AI processing
 const approveResourceService = async (id) => {
 
     // Find a pending resource
@@ -37,6 +39,14 @@ const approveResourceService = async (id) => {
     resource.rejectionReason = "";
 
     await resource.save();
+
+    // Start AI document processing without making the admin wait
+    processApprovedResource(resource._id).catch((error) => {
+        console.error(
+            `Failed to start AI processing for resource ${resource._id}:`,
+            error.message
+        );
+    });
 
     return resource;
 };
@@ -89,6 +99,9 @@ const deleteResourceByAdminService = async (id) => {
         throw error;
     }
 
+    // Delete all AI chunks associated with this resource
+    await deleteResourceChunks(resource._id);
+
     // Delete file from Cloudinary
     const result = await deleteFile(
         resource.filePublicId,
@@ -112,7 +125,7 @@ const deleteResourceByAdminService = async (id) => {
 const getAllUsersService = async () => {
 
     const users = await User.find({
-        role : "student"
+        role: "student"
     })
         .select("-password")
         .sort({ createdAt: -1 });
@@ -180,8 +193,13 @@ const deleteStudentService = async (id) => {
         uploadedBy: id
     });
 
-    // Delete resource files from Cloudinary
+    // Delete resource files and AI chunks
     for (const resource of resources) {
+
+        // Delete AI chunks from ChromaDB
+        await deleteResourceChunks(resource._id);
+
+        // Delete resource file from Cloudinary
         const result = await deleteFile(
             resource.filePublicId,
             resource.fileResourceType
@@ -205,7 +223,6 @@ const deleteStudentService = async (id) => {
         deletedResources: resources.length
     };
 };
-
 
 
 // Get admin dashboard statistics

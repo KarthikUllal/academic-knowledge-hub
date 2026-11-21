@@ -10,3 +10,16 @@ export const getUserProfile = () => {
 export const getMyUploads = () => {
     return api.get("/users/my-uploads");
 };
+
+// Update profile details
+export const updateUserProfile = (profileData) => {
+    return api.patch("/users/profile", profileData);
+};
+
+// Update profile picture
+export const updateProfilePicture = (imageFile) => {
+    const formData = new FormData();
+    formData.append("profilePicture", imageFile);
+
+    return api.patch("/users/profile-picture", formData);
+};

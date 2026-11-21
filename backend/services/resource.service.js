@@ -1,7 +1,7 @@
 
 const Resource = require("../models/resource.model");
 const { uploadFile, deleteFile } = require("./cloudinary.service");
-
+const { deleteResourceChunks } = require("../ai/vector-store/chroma.service");
 // Create a new resource
 const createResourceService = async (data, file, user) => {
 
@@ -165,9 +165,8 @@ const downloadResourceService = async (id) => {
     return resource;
 };
 
-//update resource
 
-
+// Update resource
 const updateResourceService = async (id, userId, data, file) => {
 
     // Find the resource uploaded by the logged-in student
@@ -232,6 +231,12 @@ const updateResourceService = async (id, userId, data, file) => {
             resource.status = "pending";
             resource.rejectionReason = "";
 
+            // Reset AI processing information
+            resource.aiProcessingStatus = "pending";
+            resource.aiProcessingError = "";
+            resource.aiProcessedAt = null;
+            resource.aiChunkCount = 0;
+
             await resource.save();
 
         } catch (error) {
@@ -268,6 +273,12 @@ const updateResourceService = async (id, userId, data, file) => {
         resource.status = "pending";
         resource.rejectionReason = "";
 
+        // Reset AI processing information
+        resource.aiProcessingStatus = "pending";
+        resource.aiProcessingError = "";
+        resource.aiProcessedAt = null;
+        resource.aiChunkCount = 0;
+
         await resource.save();
     }
 
@@ -289,6 +300,9 @@ const deleteResourceService = async (id, userId) => {
         error.statusCode = 404;
         throw error;
     }
+
+    // Delete all AI chunks associated with this resource
+    await deleteResourceChunks(resource._id);
 
     // Delete the file from Cloudinary
     const result = await deleteFile(

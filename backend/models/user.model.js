@@ -58,6 +58,11 @@ const userSchema = new mongoose.Schema(
             default: ""
         },
 
+        profilePicturePublicId: {
+    type: String,
+    default: ""
+},
+
         studentId: {
             type: String,
             default: ""
@@ -79,14 +84,14 @@ const userSchema = new mongoose.Schema(
             default: "student"
         },
         passwordResetToken: {
-    type: String,
-    default: null,
-  },
+            type: String,
+            default: null,
+        },
 
-  passwordResetExpires: {
-    type: Date,
-    default: null,
-  },
+        passwordResetExpires: {
+            type: Date,
+            default: null,
+        },
 
 
         isActive: {

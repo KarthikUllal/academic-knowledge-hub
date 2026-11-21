@@ -5,37 +5,37 @@ const resourceSchema = new mongoose.Schema(
         title: {
             type: String,
             required: true,
-            trim: true
+            trim: true,
         },
 
         description: {
             type: String,
             required: true,
-            trim: true
+            trim: true,
         },
 
         subject: {
             type: String,
             required: true,
-            trim: true
+            trim: true,
         },
 
         course: {
             type: String,
             required: true,
-            trim: true
+            trim: true,
         },
 
         semester: {
             type: Number,
             required: true,
-            min: 1
+            min: 1,
         },
 
         college: {
             type: String,
             required: true,
-            trim: true
+            trim: true,
         },
 
         category: {
@@ -48,56 +48,77 @@ const resourceSchema = new mongoose.Schema(
                 "Books",
                 "Presentations",
                 "Research Papers",
-                "Other"
-            ]
+                "Other",
+            ],
         },
 
         fileUrl: {
             type: String,
-            required: true
+            required: true,
         },
 
         filePublicId: {
             type: String,
-            required: true
+            required: true,
         },
         fileResourceType: {
-    type: String,
-    required: true
-},
+            type: String,
+            required: true,
+        },
 
         fileType: {
             type: String,
             required: true,
-            lowercase: true
+            lowercase: true,
         },
 
         uploadedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
-            required: true
+            required: true,
         },
 
         status: {
             type: String,
             enum: ["pending", "approved", "rejected"],
-            default: "pending"
+            default: "pending",
         },
 
         rejectionReason: {
             type: String,
+            default: "",
+        },
+        aiProcessingStatus: {
+            type: String,
+            enum: ["pending", "processing", "ready", "failed", "skipped"],
+            default: "pending"
+        },
+
+        aiProcessingError: {
+            type: String,
             default: ""
+        },
+
+        aiProcessedAt: {
+            type: Date,
+            default: null
+        },
+
+        aiChunkCount: {
+            type: Number,
+            default: 0,
+            min: 0
         },
 
         downloads: {
             type: Number,
             default: 0,
-            min: 0
-        }
+            min: 0,
+        },
     },
     {
-        timestamps: true
-    }
+        timestamps: true,
+    },
 );
 
 const Resource = mongoose.model("Resource", resourceSchema);
