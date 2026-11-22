@@ -311,6 +311,41 @@ const getAdminResourceForDownloadService = async (resourceId) => {
 };
 
 
+// Retry AI processing for a failed resource
+const retryAIProcessingService = async (id) => {
+
+     console.log("Received ID:", id);
+    console.log("Is ID a string:", typeof id === "string");
+    // Find an approved resource whose AI processing failed
+    const resource = await Resource.findOne({
+        _id: id,
+        status: "approved",
+        aiProcessingStatus: "failed",
+    });
+
+    if (!resource) {
+        const error = new Error(
+            "Approved resource with failed AI processing not found"
+        );
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // Start AI processing again without blocking the API response
+    processApprovedResource(resource._id).catch((error) => {
+        console.error(
+            `Failed to retry AI processing for resource ${resource._id}:`,
+            error.message
+        );
+    });
+
+    return {
+        message: "AI processing retry started",
+        resourceId: resource._id,
+    };
+};
+
+
 module.exports = {
     approveResourceService,
     getPendingResourcesService,
@@ -323,5 +358,6 @@ module.exports = {
     deleteStudentService,
     getDashboardStatsService,
     getAdminResourcePreviewService,
-    getAdminResourceForDownloadService
+    getAdminResourceForDownloadService,
+    retryAIProcessingService
 };

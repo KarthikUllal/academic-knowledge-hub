@@ -11,7 +11,8 @@ const {
     deleteStudentService,
     getDashboardStatsService,
     getAdminResourcePreviewService,
-    getAdminResourceForDownloadService
+    getAdminResourceForDownloadService,
+    retryAIProcessingService
 } = require("../services/admin.service");
 
 const axios = require("axios");
@@ -332,6 +333,22 @@ const downloadAdminResource = async (req, res, next) => {
     }
 };
 
+// Retry AI processing for a failed resource
+const retryAIProcessing = async (req, res) => {
+    try {
+        const result = await retryAIProcessingService(req.params.id);
+
+        return res.status(202).json({
+            success: true,
+            ...result,
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
 
 module.exports = {
     getPendingResources,
@@ -345,5 +362,6 @@ module.exports = {
     deleteStudent,
     getDashboardStats,
     getAdminResourcePreview,
-    downloadAdminResource
+    downloadAdminResource,
+    retryAIProcessing
 };

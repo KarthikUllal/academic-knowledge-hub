@@ -100,8 +100,9 @@ const processDocument = async (resource) => {
 
 
 // Process an approved academic resource and store its chunks in ChromaDB
+
 const processApprovedResource = async (resourceId) => {
-    // Only process approved resources that haven't completed processing
+    // Only process approved resources that are pending or failed
     const resource = await Resource.findOneAndUpdate(
         {
             _id: resourceId,
@@ -116,7 +117,7 @@ const processApprovedResource = async (resourceId) => {
                 aiChunkCount: 0,
             },
         },
-        { new: true }
+        { returnDocument: "after" }
     );
 
     // Prevent duplicate processing or processing unapproved resources
@@ -135,11 +136,16 @@ const processApprovedResource = async (resourceId) => {
     // Skip unsupported file formats
     if (!supportedFileTypes.includes(resource.fileType)) {
         await Resource.updateOne(
-            { _id: resourceId, status: "approved" },
+            {
+                _id: resourceId,
+                status: "approved",
+                aiProcessingStatus: "processing",
+            },
             {
                 $set: {
                     aiProcessingStatus: "skipped",
                     aiProcessingError: "Unsupported file format for AI processing",
+                    aiProcessedAt: null,
                     aiChunkCount: 0,
                 },
             }
@@ -155,7 +161,7 @@ const processApprovedResource = async (resourceId) => {
         // Run the existing document processing pipeline
         const result = await processDocument(resource);
 
-        // Mark processing as successful
+        // Mark processing as successful only if resource is still approved
         await Resource.updateOne(
             {
                 _id: resourceId,
@@ -179,12 +185,19 @@ const processApprovedResource = async (resourceId) => {
         try {
             await deleteResourceChunks(resourceId);
         } catch (cleanupError) {
-            console.error("Failed to clean up ChromaDB chunks:", cleanupError.message);
+            console.error(
+                "Failed to clean up ChromaDB chunks:",
+                cleanupError.message
+            );
         }
 
-        // Record processing failure
+        // Mark as failed only if resource is still approved and processing
         await Resource.updateOne(
-            { _id: resourceId },
+            {
+                _id: resourceId,
+                status: "approved",
+                aiProcessingStatus: "processing",
+            },
             {
                 $set: {
                     aiProcessingStatus: "failed",
@@ -201,6 +214,7 @@ const processApprovedResource = async (resourceId) => {
         );
     }
 };
+
 
 
 module.exports = {

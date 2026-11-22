@@ -16,8 +16,10 @@ const {
     getDashboardStats,
     getAdminResourcePreview,
     downloadAdminResource,
+    retryAIProcessing,
 } = require("../controllers/admin.controller");
 const { getAllReports, getReportById, reviewReport } = require("../controllers/report.controller");
+
 
 const router = express.Router();
 
@@ -117,5 +119,15 @@ router.get(
     authorize("admin"),
     downloadAdminResource
 );
+
+router.patch(
+    "/resources/:id/retry-ai",
+    protect,
+    authorize("admin"),
+    retryAIProcessing
+
+
+);
+
 
 module.exports = router;
